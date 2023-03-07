@@ -8,6 +8,11 @@ import socket
 # Import thread module
 from threading import Thread, Event
 
+def bad_request_response(connectionSocket, error):
+    print('400 Bad Request')
+    connectionSocket.send('HTTP/1.0 400 Bad Request\r\nContent-Type: text/html\r\n\r\n'.encode('utf-8'))
+    connectionSocket.send(f'<html><body><h1>Error 400: Bad Request</h1><p>{error}</p></body></html>'.encode("utf-8"))
+
 def not_found_response(connectionSocket, error):
     print('404 Not Found')
     connectionSocket.send('HTTP/1.0 404 Not Found\r\nContent-Type: text/html\r\n\r\n'.encode('utf-8'))
@@ -21,16 +26,14 @@ def ok_response(connectionSocket, filename):
 def parse_request(message):
     lines = message.splitlines()
     for line in lines:
-        words = line.split()
-        # Check that the line matches GET (filename) ...
-        if len(words) == 3 and words[0] == 'GET':
-            if match := re.match('/(.*)', words[1]):
-                filename = match.group(1)
-                if not filename: # if no file provided (e.g. 127.0.0.1/) provide default of index.html
-                    return None
-                
-                return filename
-    return None
+        # Check if the line matches GET /(filename) ...
+        if match := re.match(r'GET /([\w\.\-]*) .*', line):
+            filename = match.group(1)
+            if not filename: # if no file provided (e.g. 127.0.0.1/) provide default of index.html
+                raise Exception('No file name given')
+            
+            return filename
+    raise Exception('Could not find valid GET request')
 
 def multi_thread(connectionSocket):
     try:
@@ -39,20 +42,17 @@ def multi_thread(connectionSocket):
         print(message)
         filename = parse_request(message)
 
-        if filename is not None:
-            # Store the entire content of the requested file in a temporary buffer
-            f = open(filename, 'rb')
-            outputdata = f.read()
+        # Store the entire content of the requested file in a temporary buffer
+        f = open(filename, 'rb')
+        outputdata = f.read()
 
-            # Send the HTTP response header line to the connection socket
-            print('Sending header...')
-            ok_response(connectionSocket, f.name)
-            
-            # Send the content of the requested file to the connection socket
-            print('Sending file...')
-            connectionSocket.send(outputdata)
-        else:
-            not_found_response(connectionSocket, 'Could not find GET request')
+        # Send the HTTP response header line to the connection socket
+        print('Sending header...')
+        ok_response(connectionSocket, f.name)
+        
+        # Send the content of the requested file to the connection socket
+        print('Sending file...')
+        connectionSocket.send(outputdata)
     except Exception as e:
         error = f'{type(e).__name__}: {str(e)}'
         not_found_response(connectionSocket, error)
@@ -77,7 +77,6 @@ def main():
     serverSocket.listen(5)
 
     # Server should be up and running and listening to the incoming connections
-
     print('Ready to serve')
     while True:
         '''This part is for multi threading'''

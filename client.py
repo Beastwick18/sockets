@@ -28,7 +28,7 @@ def main():
     clientSocket.send(f'GET /{fileName} HTTP/1.1'.encode('utf-8'))
 
     header = clientSocket.recv(1024).decode('utf-8')
-    data = clientSocket.recv(1024).decode('utf-8')
+    # data = clientSocket.recv(1024).decode('utf-8')
     recv_time = time.time()
     RTT = recv_time - send_time
     
@@ -37,8 +37,9 @@ def main():
         print('Response: 404 Not found')
     elif headerLines[0] == 'HTTP/1.0 200 OK':
         print('Response: 200 OK')
+    print(header)
     
-    print(f'Data received by the client is:\n{data}')
+    # print(f'Data received by the client is:\n{data}')
     print('RTT ', RTT)
 
     '''Print other vvalues here '''
