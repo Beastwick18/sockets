@@ -35,6 +35,8 @@ def main():
     headerLines = header.splitlines()
     if headerLines[0] == 'HTTP/1.0 404 Not Found':
         print('Response: 404 Not found')
+    elif headerLines[0] == 'HTTP/1.0 400 Bad Request':
+        print('Response: 400 Bad Request')
     elif headerLines[0] == 'HTTP/1.0 200 OK':
         print('Response: 200 OK')
     
