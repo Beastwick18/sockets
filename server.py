@@ -1,6 +1,5 @@
 import re
 import sys
-import mimetypes
 
 # Import socket module
 import socket
@@ -19,9 +18,7 @@ def not_found_response(connectionSocket, error):
     connectionSocket.send(f'<html><body><h1>Error 404: Not Found</h1><p>{error}</p></body></html>'.encode("utf-8"))
 
 def ok_response(connectionSocket, filename):
-    content = mimetypes.guess_type(filename)[0]
-    print(f'Content type: {content}')
-    connectionSocket.send(f'HTTP/1.0 200 OK\r\nContent-Type: {content}\r\n\r\n'.encode('utf-8'))
+    connectionSocket.send(f'HTTP/1.0 200 OK\r\n\r\n'.encode('utf-8'))
 
 def parse_request(message):
     lines = message.splitlines()
