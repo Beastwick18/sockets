@@ -29,7 +29,7 @@ def parse_request(message):
         # Check if the line matches GET /(filename) ...
         if match := re.match(r'GET /([\w\.\-]*) .*', line):
             filename = match.group(1)
-            if not filename: # if no file provided (e.g. 127.0.0.1/) provide default of index.html
+            if not filename:
                 raise Exception('No file name given')
             
             return filename
