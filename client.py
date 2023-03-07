@@ -1,10 +1,11 @@
 import socket
-from time import *
+from time import time
 import sys
 import time
 
 
 def main():
+    # Parse command line arguments
     if len(sys.argv) == 3:
         HOST=sys.argv[1]
         PORT=8080
@@ -17,21 +18,27 @@ def main():
         print('Expected 2 or 3 arguments')
         return
     
+    # Create client socket
     clientSocket = socket.socket()
 
     print('Client has been established')
     server_add = (HOST, PORT)
-
-    clientSocket.connect(server_add)
     # connect the host and port to the socket
+    clientSocket.connect(server_add)
+
     send_time = time.time()
+    
+    # Send GET request to server
     clientSocket.send(f'GET /{fileName} HTTP/1.1'.encode('utf-8'))
 
+    # Recieve the header and data
     header = clientSocket.recv(1024).decode('utf-8')
     data = clientSocket.recv(1024).decode('utf-8')
     recv_time = time.time()
+    # Calculate the round trip time
     RTT = recv_time - send_time
     
+    # Parse the header
     headerLines = header.splitlines()
     if headerLines[0] == 'HTTP/1.0 404 Not Found':
         print('Response: 404 Not found')
