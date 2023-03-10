@@ -1,3 +1,6 @@
+# Steven Culwell
+# 1001783662
+
 import re
 import sys
 
@@ -5,42 +8,53 @@ import sys
 import socket
 
 # Import thread module
-from threading import Thread, Event
+from threading import Thread
 
 def bad_request_response(connectionSocket, error):
     print('400 Bad Request')
-    connectionSocket.send('HTTP/1.0 400 Bad Request\r\nContent-Type: text/html\r\n\r\n'.encode('utf-8'))
-    connectionSocket.send(f'<html><body><h1>Error 400: Bad Request</h1><p>{error}</p></body></html>'.encode("utf-8"))
+    connectionSocket.send('HTTP/1.1 400 Bad Request\r\n\r\n'.encode('utf-8'))
+    connectionSocket.send(f'<html><body><h1>Error 400: Bad Request</h1><p>{error}</p></body></html>\r\n'.encode("utf-8"))
 
 def not_found_response(connectionSocket, error):
     print('404 Not Found')
-    connectionSocket.send('HTTP/1.0 404 Not Found\r\nContent-Type: text/html\r\n\r\n'.encode('utf-8'))
-    connectionSocket.send(f'<html><body><h1>Error 404: Not Found</h1><p>{error}</p></body></html>'.encode("utf-8"))
+    connectionSocket.send('HTTP/1.1 404 Not Found\r\n\r\n'.encode('utf-8'))
+    connectionSocket.send(f'<html><body><h1>Error 404: Not Found</h1><p>{error}</p></body></html>\r\n'.encode("utf-8"))
 
 def ok_response(connectionSocket, filename):
-    connectionSocket.send(f'HTTP/1.0 200 OK\r\n\r\n'.encode('utf-8'))
+    connectionSocket.send(f'HTTP/1.1 200 OK\r\n\r\n'.encode('utf-8'))
 
 def parse_request(message):
     lines = message.splitlines()
     for line in lines:
         # Check if the line matches GET /(filename) ...
-        if match := re.match(r'GET /([\w\.\-]*) .*', line):
+        if match := re.match(r'GET /([\w\.\-/]*) .*', line):
             filename = match.group(1)
             if not filename:
-                raise Exception('No file name given')
+                return (404, 'No file name given')
             
-            return filename
-    raise Exception('Could not find valid GET request')
+            return (200, filename)
+    return (400, 'Invalid GET request')
 
 def multi_thread(connectionSocket):
     try:
         # Extract the path of the requested object from the message
         message = connectionSocket.recv(1024).decode('utf-8')
         print(message)
-        filename = parse_request(message)
+        response_code, response = parse_request(message)
+        
+        # If there was an error parsing the message, return the appropriate header
+        if response_code == 404:
+            not_found_response(connectionSocket, response)
+            connectionSocket.close()
+            return
+        if response_code == 400:
+            bad_request_response(connectionSocket, response)
+            connectionSocket.close()
+            return
 
         # Store the entire content of the requested file in a temporary buffer
-        f = open(filename, 'rb')
+        filename = response
+        f = open(f'./{filename}', 'rb')
         outputdata = f.read()
 
         # Send the HTTP response header line to the connection socket
@@ -79,6 +93,10 @@ def main():
         '''This part is for multi threading'''
         conn, addr = serverSocket.accept()
         print(f'Connected to: {str(addr)}')
+        print('Peer name:', conn.getpeername())
+        print('Socket family:', conn.family)
+        print('Socket protocol:', conn.proto)
+        print('Timeout:', conn.gettimeout())
         thread = Thread(target=multi_thread, args=(conn,))
         '''Start the new thread'''
         thread.start()

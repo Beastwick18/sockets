@@ -1,8 +1,9 @@
-import socket
-from time import time
-import sys
-import time
+# Steven Culwell
+# 1001783662
 
+import socket
+import time
+import sys
 
 def main():
     # Parse command line arguments
@@ -20,11 +21,17 @@ def main():
     
     # Create client socket
     clientSocket = socket.socket()
+    clientSocket.settimeout(1)
 
     print('Client has been established')
+    print(f'Connecting to server, IP: {HOST}, PORT: {PORT}')
     server_add = (HOST, PORT)
     # connect the host and port to the socket
     clientSocket.connect(server_add)
+    print('Peer name:', clientSocket.getpeername())
+    print('Socket family:', clientSocket.family)
+    print('Socket protocol:', clientSocket.proto)
+    print('Timeout:', clientSocket.gettimeout())
 
     send_time = time.time()
     
@@ -51,15 +58,14 @@ def main():
     # depending on how quickly they were sent. If they were both
     # combined into one message (the header), set the data to be
     # the content after the header.
-    if len(headerLines) > 3: # There is data past the header and content type
+    if len(headerLines) > 2: # There is data past the header (first two lines)
         data = ''
-        for line in headerLines[3:]:
+        for line in headerLines[2:]:
             data += line + '\n'
     
     print(f'Data received by the client is:\n{data}')
-    print('RTT ', RTT)
+    print(f'RTT {RTT} seconds')
 
-    '''Print other vvalues here '''
     ''' close socket '''
     clientSocket.close()
 
